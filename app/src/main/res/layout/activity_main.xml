@@ -221,16 +221,15 @@
             app:layout_constraintVertical_bias="0.096" />
 
         <Button
-            android:id="@+id/connectButton"
+            android:id="@+id/controlButton"
             android:layout_width="308dp"
             android:layout_height="wrap_content"
             android:layout_marginBottom="8dp"
             android:layout_marginEnd="8dp"
             android:layout_marginStart="8dp"
             android:layout_marginTop="8dp"
-            android:text="stop service"
+            android:text="Service Action"
             android:textColor="#ffffff"
-            android:background="#ff0000"
             android:onClick="connectionButton"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
@@ -246,7 +245,7 @@
             android:layout_marginEnd="8dp"
             android:layout_marginStart="8dp"
             android:layout_marginTop="8dp"
-            android:text="TextView"
+            android:text="Connection Status"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"

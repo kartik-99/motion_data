@@ -91,9 +91,15 @@ class InitialActivity : Activity() {
 
             val intent = Intent(this, MainActivity::class.java)
             intent.putExtra("name", name)
-            intent.putExtra("state", Integer.toString(choice))
+            intent.putExtra("status", Integer.toString(choice))
             Toast.makeText(applicationContext, name, Toast.LENGTH_SHORT).show()
             startActivity(intent)
+        }
+        else{
+            if(!isSdAvailable)
+                Toast.makeText(this, "No storage location available", Toast.LENGTH_SHORT).show()
+            else
+                Toast.makeText(this, "Storage location is not writable", Toast.LENGTH_SHORT).show()
         }
     }
 
