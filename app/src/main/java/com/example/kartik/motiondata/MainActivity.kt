@@ -8,6 +8,7 @@ import android.graphics.Color
 import android.os.*
 import android.support.v7.app.AppCompatActivity
 import android.view.View
+import android.widget.Toast
 import kotlinx.android.synthetic.main.activity_main.*
 
 class MainActivity : AppCompatActivity(), SensorService.Callbacks{
@@ -18,6 +19,7 @@ class MainActivity : AppCompatActivity(), SensorService.Callbacks{
     var bigRecordNumber = 0
     var connectionStatus = false
     var serviceStatus = false
+    var doubleBackToExitPressedOnce = false
 
     lateinit var serviceIntent :Intent
     lateinit var recievedIntent: Intent
@@ -46,6 +48,18 @@ class MainActivity : AppCompatActivity(), SensorService.Callbacks{
         title = "$username : Data"
         updateButtonUI()
         updateControlButtonUI()
+        disableButtons()
+    }
+
+    override fun onBackPressed() {
+        if (doubleBackToExitPressedOnce) {
+            finish()
+        }
+
+        this.doubleBackToExitPressedOnce = true
+        Toast.makeText(this, "Press back again to exit", Toast.LENGTH_SHORT).show()
+
+        Handler().postDelayed({ doubleBackToExitPressedOnce = false }, 2000)
     }
 
     private fun initialize() {
@@ -114,6 +128,26 @@ class MainActivity : AppCompatActivity(), SensorService.Callbacks{
         }
     }
 
+    fun disableButtons(){
+        standingButton.isEnabled = false
+        sittingButton.isEnabled = false
+        layingButton.isEnabled = false
+        walkingButton.isEnabled = false
+        runningButton.isEnabled = false
+        upstairsButton.isEnabled = false
+        downstairsButton.isEnabled = false
+    }
+
+    fun enableButtons(){
+        standingButton.isEnabled = true
+        sittingButton.isEnabled = true
+        layingButton.isEnabled = true
+        walkingButton.isEnabled = true
+        runningButton.isEnabled = true
+        upstairsButton.isEnabled = true
+        downstairsButton.isEnabled = true
+    }
+
     private fun startSensorService() {
         initializeSensorService()
         startService(serviceIntent)
@@ -144,10 +178,14 @@ class MainActivity : AppCompatActivity(), SensorService.Callbacks{
 
     //button functions
     fun connectionButton(view:View){
-        if(serviceStatus)
+        if(serviceStatus){
             stopSensorService()
-        else
+            disableButtons()
+        }
+        else{
             startSensorService()
+            enableButtons()
+        }
         updateControlButtonUI()
     }
 

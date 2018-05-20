@@ -14,6 +14,9 @@ import java.io.FileOutputStream
 import java.io.IOException
 import java.util.*
 import android.app.Activity
+import android.app.Notification
+import android.app.NotificationManager
+import android.support.v4.app.NotificationCompat
 import android.util.Log
 
 
@@ -45,6 +48,12 @@ class SensorService: Service() {
     lateinit var accelerometerListener :SensorEventListener
     lateinit var gyroscopeListener : SensorEventListener
     lateinit var linearAccelerometerListener : SensorEventListener
+
+    //notification vars
+    lateinit var notificationManager: NotificationManager
+    lateinit var notification: NotificationCompat.Builder
+    var NOTIFICATION_ID = 1
+    var CHANNEL_ID = "channel"
 
 
     var CUSTOM_LOG = "Custom_Log"
@@ -105,6 +114,14 @@ class SensorService: Service() {
             }
             override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
         }
+
+        notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notification = NotificationCompat.Builder(this, CHANNEL_ID)
+                .setContentTitle("Motion : Data")
+                .setContentText("Sensor Service Running")
+                .setSmallIcon(R.drawable.notification_icon_background)
+                .setOngoing(true)
+
     }
 
     override fun onBind(intent: Intent?): IBinder {
@@ -121,7 +138,7 @@ class SensorService: Service() {
         initialize()
         setupSensorManager()
         startDataRecording()
-
+        showNotification()
         Log.d(CUSTOM_LOG, "OnStartCommand")
         return super.onStartCommand(intent, flags, startId)
     }
@@ -147,7 +164,12 @@ class SensorService: Service() {
     override fun onRebind(intent: Intent?) {
         setupSensorManager()
         Log.d(CUSTOM_LOG, "OnRebind")
+        showNotification()
         super.onRebind(intent)
+    }
+
+    fun showNotification(){
+        notificationManager.notify(NOTIFICATION_ID, notification.build())
     }
 
     override fun onUnbind(intent: Intent?): Boolean {
@@ -159,6 +181,7 @@ class SensorService: Service() {
 
         //stop the timer task
         stopDataRecording()
+        notificationManager.cancel(NOTIFICATION_ID)
 
         Log.d(CUSTOM_LOG, "Unbind")
         return super.onUnbind(intent)
