@@ -12,9 +12,7 @@ import java.io.File
 import java.io.FileNotFoundException
 import java.io.FileOutputStream
 import java.io.IOException
-import java.util.*
 import android.app.Activity
-import android.app.Notification
 import android.app.NotificationManager
 import android.support.v4.app.NotificationCompat
 import android.util.Log
@@ -35,6 +33,7 @@ class SensorService: Service() {
     var dataHandler = Handler()
     lateinit var dataRunnable : Runnable
     var DELAY : Long = 20
+    var INDIVIDUAL_RECORD_SIZE = 64
 
     //Service variables
     lateinit var activity: Callbacks
@@ -58,23 +57,45 @@ class SensorService: Service() {
 
     var CUSTOM_LOG = "Custom_Log"
 
-    fun recordData(){
-        if(recordNumber == 0)
-            dataString = Integer.toString(bigRecordNumber) + " " + Integer.toString(status) + "\n"
+    override fun onBind(intent: Intent?): IBinder {
+        Log.d(CUSTOM_LOG, "Onbind")
+        return myBinder
+    }
 
-        for (i in 0..8)
-            dataString = dataString + java.lang.Float.toString(data[i])+" "
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
 
-        dataString += "\n"
-        recordNumber++
+        status = intent?.getStringExtra("status")?.toInt()!!
+        username = intent?.getStringExtra("name")
+        bigRecordNumber = intent?.getStringExtra("bigRecordNumber").toInt()
 
-        if(recordNumber == 63){
-            writeIntoFile(dataString)
-            bigRecordNumber++
-            recordNumber = 0
-            updateUIHandler.postDelayed(serviceRunnable, 0)
-        }
+        initialize()
+        setupSensorManager()
+        startDataRecording()
+        showNotification()
+        Log.d(CUSTOM_LOG, "OnStartCommand")
+        return super.onStartCommand(intent, flags, startId)
+    }
 
+    override fun onRebind(intent: Intent?) {
+        setupSensorManager()
+        Log.d(CUSTOM_LOG, "OnRebind")
+        showNotification()
+        super.onRebind(intent)
+    }
+
+    override fun onUnbind(intent: Intent?): Boolean {
+
+        //unregister the listeners
+        sensorManager.unregisterListener(accelerometerListener)
+        sensorManager.unregisterListener(gyroscopeListener)
+        sensorManager.unregisterListener(linearAccelerometerListener)
+
+        //stop the timer task
+        stopDataRecording()
+        notificationManager.cancel(NOTIFICATION_ID)
+
+        Log.d(CUSTOM_LOG, "Unbind")
+        return super.onUnbind(intent)
     }
 
     fun initialize(){
@@ -124,23 +145,11 @@ class SensorService: Service() {
 
     }
 
-    override fun onBind(intent: Intent?): IBinder {
-        Log.d(CUSTOM_LOG, "Onbind")
-        return myBinder
-    }
-
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-
-        status = intent?.getStringExtra("status")?.toInt()!!
-        username = intent?.getStringExtra("name")
-        bigRecordNumber = intent?.getStringExtra("bigRecordNumber").toInt()
-
-        initialize()
-        setupSensorManager()
-        startDataRecording()
-        showNotification()
-        Log.d(CUSTOM_LOG, "OnStartCommand")
-        return super.onStartCommand(intent, flags, startId)
+    private fun setupSensorManager() {
+        sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
+        sensorManager.registerListener(accelerometerListener, sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), SAMPLING_PERIOD)
+        sensorManager.registerListener(gyroscopeListener, sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE), SAMPLING_PERIOD)
+        sensorManager.registerListener(linearAccelerometerListener, sensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION), SAMPLING_PERIOD)
     }
 
     private fun startDataRecording() {
@@ -155,43 +164,33 @@ class SensorService: Service() {
 
     }
 
+    fun recordData(){
+        if(recordNumber == 0)
+            dataString = Integer.toString(bigRecordNumber) + " " + Integer.toString(status) + "\n"
+
+        for (i in 0..8)
+            dataString = dataString + java.lang.Float.toString(data[i])+" "
+
+        dataString += "\n"
+        recordNumber++
+
+        if(recordNumber == INDIVIDUAL_RECORD_SIZE){
+            writeIntoFile(dataString)
+            bigRecordNumber++
+            recordNumber = 0
+            updateUIHandler.postDelayed(serviceRunnable, 0)
+        }
+
+    }
+
     private fun stopDataRecording(){
         Log.d(CUSTOM_LOG, "Stopped Recording")
         dataHandler.removeCallbacks(dataRunnable)
         updateUIHandler.removeCallbacks(serviceRunnable)
     }
 
-    override fun onRebind(intent: Intent?) {
-        setupSensorManager()
-        Log.d(CUSTOM_LOG, "OnRebind")
-        showNotification()
-        super.onRebind(intent)
-    }
-
     fun showNotification(){
         notificationManager.notify(NOTIFICATION_ID, notification.build())
-    }
-
-    override fun onUnbind(intent: Intent?): Boolean {
-
-        //unregister the listeners
-        sensorManager.unregisterListener(accelerometerListener)
-        sensorManager.unregisterListener(gyroscopeListener)
-        sensorManager.unregisterListener(linearAccelerometerListener)
-
-        //stop the timer task
-        stopDataRecording()
-        notificationManager.cancel(NOTIFICATION_ID)
-
-        Log.d(CUSTOM_LOG, "Unbind")
-        return super.onUnbind(intent)
-    }
-
-    private fun setupSensorManager() {
-        sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
-        sensorManager.registerListener(accelerometerListener, sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), SAMPLING_PERIOD)
-        sensorManager.registerListener(gyroscopeListener, sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE), SAMPLING_PERIOD)
-        sensorManager.registerListener(linearAccelerometerListener, sensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION), SAMPLING_PERIOD)
     }
 
     private fun writeIntoFile(newData: String) {
@@ -215,7 +214,7 @@ class SensorService: Service() {
         this.status = status
     }
 
-    fun     registerClient(activity: Activity) {
+    fun registerClient(activity: Activity) {
         this.activity = activity as Callbacks
     }
 
