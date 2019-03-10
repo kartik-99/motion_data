@@ -163,17 +163,6 @@ class MainActivity : AppCompatActivity(), SensorService.Callbacks{
 
     override fun updateClient(bigRecordNumber:Int, status:Int) {
         this.bigRecordNumber =  bigRecordNumber
-
-        bigRecordTextView.text = this.bigRecordNumber.toString()
-        when(status){
-            STATUS_SITTING -> latestRecordTextView.text = "Sitting"
-            STATUS_STANDING -> latestRecordTextView.text = "Standing"
-            STATUS_LAYING -> latestRecordTextView.text = "Laying"
-            STATUS_WALKING -> latestRecordTextView.text = "Walking"
-            STATUS_RUNNING -> latestRecordTextView.text = "Running"
-            STATUS_UPSTAIRS -> latestRecordTextView.text = "Upstairs"
-            STATUS_DOWNSTAIRS-> latestRecordTextView.text = "Downstairs"
-        }
     }
 
     //button functions
